@@ -2,25 +2,16 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import pandas as pd
 import os
-
-# --- Configuration ---
 FILE_NAME = 'student_data.csv'
-
-# Globals
 SUBJECTS = [] 
 mark_entries = {} 
-
-# --- Backend Logic ---
 def load_data():
     if not os.path.exists(FILE_NAME):
         return pd.DataFrame()
     return pd.read_csv(FILE_NAME)
-
 def save_data(df):
     df.to_csv(FILE_NAME, index=False)
-
 def get_subjects_from_file():
-    """Updates the global SUBJECTS list from the CSV headers."""
     global SUBJECTS
     if os.path.exists(FILE_NAME):
         df = pd.read_csv(FILE_NAME)
@@ -29,18 +20,14 @@ def get_subjects_from_file():
         SUBJECTS = [col for col in all_cols if col not in standard_cols]
     else:
         SUBJECTS = []
-
 def calculate_grade(percentage):
     if percentage >= 90: return 'A'
     elif percentage >= 75: return 'B'
     elif percentage >= 60: return 'C'
     elif percentage >= 40: return 'D'
     else: return 'F'
-
 def recalculate_all_scores(df):
-    """Recalculates Total, Percentage, and Grade for the whole dataframe."""
     valid_subs = [s for s in SUBJECTS if s in df.columns]
-    
     if not valid_subs:
         df['Total'] = 0
         df['Percentage'] = 0.0
@@ -52,56 +39,37 @@ def recalculate_all_scores(df):
         df['Grade'] = df['Percentage'].apply(calculate_grade)
         
     return df
-
-# --- HELPER: Case Insensitive Matcher ---
 def find_subject_case_insensitive(user_input):
-    """
-    Returns the ACTUAL subject name from the global list 
-    matching the user_input (ignoring case).
-    Returns None if not found.
-    """
     user_input_lower = user_input.lower().strip()
     for subject in SUBJECTS:
         if subject.lower() == user_input_lower:
             return subject # Return the existing formatted name
     return None
-
-# --- Feature: Add Subject (Case Insensitive) ---
 def add_new_subject_column():
     user_input = simpledialog.askstring("Add Subject", "Enter New Subject Name:")
-    if not user_input: return 
+    if not user_input: 
+        return 
 
     user_input = user_input.strip()
-    
-    # 1. Check if it exists (Ignoring Case)
     existing_name = find_subject_case_insensitive(user_input)
-    
     if existing_name:
         messagebox.showerror("Error", f"Subject '{existing_name}' already exists!")
         return
-
-    # 2. Format name to Title Case for better UI (e.g., "math" -> "Math")
     new_sub_name = user_input.title()
-
     df = load_data()
-    
     if not df.empty:
         df[new_sub_name] = 0
         SUBJECTS.append(new_sub_name)
         df = recalculate_all_scores(df)
     else:
         SUBJECTS.append(new_sub_name)
-
     if not df.empty:
         cols = ['Roll No', 'Name'] + SUBJECTS + ['Total', 'Percentage', 'Grade']
         df = df[cols]
         save_data(df)
-    
     setup_ui_inputs()
     refresh_treeview()
     messagebox.showinfo("Success", f"Subject '{new_sub_name}' added!")
-
-# --- Feature: Remove Subject (Case Insensitive) ---
 def remove_subject_column():
     if not SUBJECTS:
         messagebox.showwarning("Error", "No subjects to remove!")
@@ -112,7 +80,7 @@ def remove_subject_column():
 
     if not user_input: return
 
-    # 1. Find the ACTUAL name using the helper
+    
     target_subject = find_subject_case_insensitive(user_input)
 
     if not target_subject:
@@ -122,7 +90,7 @@ def remove_subject_column():
     confirm = messagebox.askyesno("Confirm", f"Are you sure you want to delete '{target_subject}'?\nThis will update all student records.")
     if not confirm: return
 
-    # 2. Remove using the actual name
+    
     SUBJECTS.remove(target_subject)
 
     df = load_data()
@@ -137,7 +105,7 @@ def remove_subject_column():
     refresh_treeview()
     messagebox.showinfo("Success", f"Subject '{target_subject}' removed.")
 
-# --- Standard Functions ---
+
 def add_student():
     roll = roll_entry.get()
     name = name_entry.get()
@@ -229,7 +197,7 @@ def initial_check():
         df.to_csv(FILE_NAME, index=False)
     get_subjects_from_file()
 
-# --- Main Application ---
+
 root = tk.Tk()
 root.title("Student Record (Smart Case Handling)")
 root.geometry("950x600")
